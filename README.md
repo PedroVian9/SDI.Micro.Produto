@@ -84,10 +84,10 @@ Pacotes NuGet usados no projeto:
 ```text
 SDI.Micro.Produto/
   README.md
-  SDI.Back.Template.slnx
+  SDI.Back.API.slnx
   Scripts/
     ScriptDeCriacao.sql
-  SDI.Back.Template/
+  SDI.Back.API/
     Program.cs
     appsettings.json
     Properties/
@@ -144,10 +144,10 @@ A estrutura original usava o prefixo `Alta`. A pedido do projeto, as pastas, sol
 
 Exemplos:
 
-- `Alta.Back.Template` virou `SDI.Back.Template`
-- `Alta.Back.Template.slnx` virou `SDI.Back.Template.slnx`
-- `Alta.Back.Template.csproj` virou `SDI.Back.Template.csproj`
-- `namespace Alta.Back.Template` virou `namespace SDI.Back.Template`
+- `Alta.Back.API` virou `SDI.Back.API`
+- `Alta.Back.API.slnx` virou `SDI.Back.API.slnx`
+- `Alta.Back.API.csproj` virou `SDI.Back.API.csproj`
+- `namespace Alta.Back.API` virou `namespace SDI.Back.API`
 
 ## Analise detalhada do banco
 
@@ -676,25 +676,25 @@ Como produto depende das outras tabelas, a ordem natural de uso e:
 ### Restaurar pacotes
 
 ```powershell
-dotnet restore SDI.Back.Template.slnx
+dotnet restore SDI.Back.API.slnx
 ```
 
 ### Compilar
 
 ```powershell
-dotnet build SDI.Back.Template.slnx
+dotnet build SDI.Back.API.slnx
 ```
 
 ### Executar API
 
 ```powershell
-dotnet run --project SDI.Back.Template\SDI.Back.Template.csproj
+dotnet run --project SDI.Back.API\SDI.Back.API.csproj
 ```
 
 Ou informando uma URL especifica:
 
 ```powershell
-dotnet run --project SDI.Back.Template\SDI.Back.Template.csproj --urls http://localhost:5242
+dotnet run --project SDI.Back.API\SDI.Back.API.csproj --urls http://localhost:5242
 ```
 
 ### Parar API
@@ -1346,7 +1346,7 @@ GET /categorias?categoriaPaiId=00000000-0000-0000-0000-000000000000
 Mensagem comum:
 
 ```text
-The process cannot access the file 'SDI.Back.Template.exe' because it is being used by another process.
+The process cannot access the file 'SDI.Back.API.exe' because it is being used by another process.
 ```
 
 Causa:
@@ -1356,14 +1356,14 @@ Causa:
 Solucao:
 
 ```powershell
-Get-Process SDI.Back.Template -ErrorAction SilentlyContinue
-Stop-Process -Name SDI.Back.Template
+Get-Process SDI.Back.API -ErrorAction SilentlyContinue
+Stop-Process -Name SDI.Back.API
 ```
 
 Depois:
 
 ```powershell
-dotnet build SDI.Back.Template.slnx
+dotnet build SDI.Back.API.slnx
 ```
 
 ### Erro de conexao com PostgreSQL
@@ -1470,19 +1470,19 @@ psql -h localhost -p 5432 -U postgres -d sdi_produto -f Scripts\ScriptDeCriacao.
 4. Restaurar pacotes:
 
 ```powershell
-dotnet restore SDI.Back.Template.slnx
+dotnet restore SDI.Back.API.slnx
 ```
 
 5. Compilar:
 
 ```powershell
-dotnet build SDI.Back.Template.slnx
+dotnet build SDI.Back.API.slnx
 ```
 
 6. Executar:
 
 ```powershell
-dotnet run --project SDI.Back.Template\SDI.Back.Template.csproj
+dotnet run --project SDI.Back.API\SDI.Back.API.csproj
 ```
 
 7. Abrir Swagger:

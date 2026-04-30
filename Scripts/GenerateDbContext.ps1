@@ -2,10 +2,10 @@ $ErrorActionPreference = "Stop"
 
 function Generate-DbContext {
     param (
-        [string]$ProjectName = "Alta.Back.Template"
+        [string]$ProjectName = "Alta.Back.API"
     )
 
-    $targetDir = Join-Path $PSScriptRoot "..\Alta.Back.Template\Data"
+    $targetDir = Join-Path $PSScriptRoot "..\Alta.Back.API\Data"
     if (-not (Test-Path $targetDir)) {
         New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
     }
