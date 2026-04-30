@@ -8,15 +8,14 @@ namespace SDI.Back.Template.Repositories;
 
 public sealed class ProdutoRepository(IDbConnectionFactory connectionFactory) : IProdutoRepository
 {
-    public async Task<PagedResult<Produto>> ListarAsync(
-        int pagina,
-        int tamanhoPagina,
-        bool? ativo,
-        string? busca,
-        Guid? categoriaId,
-        Guid? transporteId,
-        Guid? unidadeMedidaId,
-        CancellationToken cancellationToken)
+    public async Task<PagedResult<Produto>> ListarAsync(int pagina,
+                                                        int tamanhoPagina,
+                                                        bool? ativo,
+                                                        string? busca,
+                                                        Guid? categoriaId,
+                                                        Guid? transporteId,
+                                                        Guid? unidadeMedidaId,
+                                                        CancellationToken cancellationToken)
     {
         const string sql = """
             select * from sdi.produto
