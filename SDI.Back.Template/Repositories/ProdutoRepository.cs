@@ -74,7 +74,6 @@ public sealed class ProdutoRepository(IDbConnectionFactory connectionFactory) : 
                 codigo,
                 nome,
                 descricao,
-                quantidade_total,
                 usuario_cadastro)
             values (
                 @transporteId,
@@ -83,7 +82,6 @@ public sealed class ProdutoRepository(IDbConnectionFactory connectionFactory) : 
                 @codigo,
                 @nome,
                 @descricao,
-                @quantidadeTotal,
                 @usuarioCadastro)
             returning *;
             """;
@@ -101,7 +99,6 @@ public sealed class ProdutoRepository(IDbConnectionFactory connectionFactory) : 
                    codigo = @codigo,
                    nome = @nome,
                    descricao = @descricao,
-                   quantidade_total = @quantidadeTotal,
                    usuario_alteracao = @usuarioAlteracao
              where id = @id
             returning *;

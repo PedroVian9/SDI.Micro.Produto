@@ -102,6 +102,10 @@ public sealed class ProdutoService(IProdutoRepository produtoRepository,
 
     private async Task ValidarRelacionamentosAsync(ProdutoInput input, CancellationToken cancellationToken)
     {
+        _ = ServiceValidation.RequiredGuid(input.TransporteId, "Transporte");
+        _ = ServiceValidation.RequiredGuid(input.CategoriaId, "Categoria");
+        _ = ServiceValidation.RequiredGuid(input.UnidadeMedidaId, "Unidade de medida");
+
         if (!await transporteRepository.ExisteAsync(input.TransporteId, cancellationToken))
         {
             throw new DomainException("Transporte nao encontrado ou inativo.");
@@ -116,11 +120,6 @@ public sealed class ProdutoService(IProdutoRepository produtoRepository,
         {
             throw new DomainException("Unidade de medida nao encontrada ou inativa.");
         }
-
-        if (input.QuantidadeTotal < 0)
-        {
-            throw new DomainException("Quantidade total nao pode ser negativa.");
-        }
     }
 
     private static Produto ToEntity(Guid id, ProdutoInput input, bool isCreate)
@@ -134,7 +133,6 @@ public sealed class ProdutoService(IProdutoRepository produtoRepository,
             Codigo = ServiceValidation.Required(input.Codigo, "Codigo", 60).ToUpperInvariant(),
             Nome = ServiceValidation.Required(input.Nome, "Nome", 150),
             Descricao = ServiceValidation.Optional(input.Descricao, "Descricao", 1000),
-            QuantidadeTotal = input.QuantidadeTotal,
             UsuarioCadastro = isCreate ? input.UsuarioCadastro : null,
             UsuarioAlteracao = isCreate ? null : input.UsuarioAlteracao
         };

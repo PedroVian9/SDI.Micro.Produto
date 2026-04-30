@@ -8,7 +8,7 @@ Este servico permite o cadastro e manutencao de:
 - Categorias, incluindo hierarquia por categoria pai.
 - Transportes.
 - Unidades de medida.
-- Produtos, vinculados obrigatoriamente a uma categoria, um transporte e uma unidade de medida.
+- Produtos, vinculados obrigatoriamente a uma categoria, um transporte e uma unidade de medida, sem preco e sem quantidade no catalogo.
 
 O microservico foi implementado a partir da analise do script [`Scripts/ScriptDeCriacao.sql`](Scripts/ScriptDeCriacao.sql), respeitando o schema `sdi`, as tabelas, constraints, indices, auditoria e relacionamentos definidos no banco.
 
@@ -42,9 +42,10 @@ O banco indica que produto nao e uma entidade isolada. Para cadastrar um produto
 
 - Como o produto sera transportado.
 - A qual categoria ele pertence.
-- Qual unidade de medida sera usada para controlar quantidade.
+- Qual unidade de medida caracteriza o produto.
 - Um codigo unico de identificacao.
-- A quantidade total disponivel.
+
+Preco e quantidade nao pertencem ao catalogo de produtos. Esses dados devem ficar nos dominios de fornecimentos, estoque, demandas ou pedidos, conforme a arquitetura distribuida.
 
 Por isso, a API foi dividida em quatro dominios principais:
 
@@ -393,7 +394,6 @@ Campos:
 | `codigo` | VARCHAR(60) | Sim | Codigo unico, case-insensitive |
 | `nome` | VARCHAR(150) | Sim | Nome do produto |
 | `descricao` | VARCHAR(1000) | Nao | Texto livre |
-| `quantidade_total` | NUMERIC(18,4) | Sim | Default `0`, nao pode ser negativa |
 | `ativo` | BOOLEAN | Sim | Default `true` |
 | `data_cadastro` | TIMESTAMPTZ | Sim | Default `now()` |
 | `usuario_cadastro` | UUID | Nao | Usuario criador |
@@ -414,13 +414,6 @@ CONSTRAINT fk_produto_categoria
 CONSTRAINT fk_produto_unidade_medida
     FOREIGN KEY (unidade_medida_id)
     REFERENCES sdi.unidade_medida(id)
-```
-
-Constraint de quantidade:
-
-```sql
-CONSTRAINT ck_produto_quantidade_total
-    CHECK (quantidade_total >= 0)
 ```
 
 Indice unico:
@@ -450,7 +443,9 @@ Impacto na API:
 
 - Produto exige transporte, categoria e unidade de medida.
 - A API valida se os relacionamentos existem e estao ativos antes de inserir ou atualizar.
-- `quantidadeTotal` nao pode ser negativa.
+- Produto nao possui preco no catalogo.
+- Produto nao possui quantidade no catalogo.
+- Produto nao possui vinculo direto com fornecedor; a associacao fornecedor/produto pertence ao microsservico de fornecimentos, permitindo reutilizar o mesmo catalogo por multiplos fornecedores.
 - `codigo` e normalizado para maiusculo antes de gravar.
 - A listagem permite filtros por categoria, transporte e unidade de medida.
 
@@ -663,7 +658,6 @@ O script cria:
 - Funcao `sdi.fn_atualizar_ultima_alteracao`.
 - Tabelas `transporte`, `categoria`, `unidade_medida` e `produto`.
 - Constraints de FK.
-- Constraint de quantidade nao negativa.
 - Indices unicos.
 - Indices auxiliares.
 - Triggers de atualizacao de `ultima_alteracao`.
@@ -979,7 +973,6 @@ Content-Type: application/json
   "codigo": "note-001",
   "nome": "Notebook Dell Inspiron",
   "descricao": "Notebook para uso academico e profissional",
-  "quantidadeTotal": 10,
   "usuarioCadastro": null
 }
 ```
@@ -1003,7 +996,6 @@ Content-Type: application/json
   "codigo": "NOTE-001",
   "nome": "Notebook Dell Inspiron 15",
   "descricao": "Notebook atualizado",
-  "quantidadeTotal": 15,
   "usuarioAlteracao": null
 }
 ```
@@ -1077,12 +1069,13 @@ Resposta:
 - `codigo` tem limite de 60 caracteres.
 - `nome` tem limite de 150 caracteres.
 - `descricao` tem limite de 1000 caracteres.
-- `quantidadeTotal` nao pode ser negativa.
 - `codigo` deve ser unico ignorando maiusculas/minusculas.
 - `codigo` e gravado em maiusculo.
 - Transporte precisa existir e estar ativo.
 - Categoria precisa existir e estar ativa.
 - Unidade de medida precisa existir e estar ativa.
+- Produto nao possui `preco` nem `quantidadeTotal`.
+- Produto e reutilizavel por multiplos fornecedores, portanto nao possui `fornecedorId`.
 
 ## Tratamento de erros
 
@@ -1099,10 +1092,10 @@ Exemplo:
 ```json
 {
   "statusHttp": 400,
-  "mensagem": "Quantidade total nao pode ser negativa.",
+  "mensagem": "Transporte e obrigatorio.",
   "resultado": null,
   "erros": [
-    "Quantidade total nao pode ser negativa."
+    "Transporte e obrigatorio."
   ]
 }
 ```
@@ -1166,39 +1159,38 @@ Eventos publicados:
 
 | Evento | Quando ocorre |
 | --- | --- |
-| `produto.created` | Produto criado |
-| `produto.updated` | Produto atualizado |
-| `produto.status-changed` | Produto ativado ou inativado |
-| `categoria.created` | Categoria criada |
-| `categoria.updated` | Categoria atualizada |
-| `categoria.status-changed` | Categoria ativada ou inativada |
-| `transporte.created` | Transporte criado |
-| `transporte.updated` | Transporte atualizado |
-| `transporte.status-changed` | Transporte ativado ou inativado |
-| `unidade-medida.created` | Unidade de medida criada |
-| `unidade-medida.updated` | Unidade de medida atualizada |
-| `unidade-medida.status-changed` | Unidade de medida ativada ou inativada |
+| `produto_cadastrado` | Produto criado |
+| `produto_atualizado` | Produto atualizado |
+| `produto_status_alterado` | Produto ativado ou inativado |
+| `categoria_cadastrada` | Categoria criada |
+| `categoria_atualizada` | Categoria atualizada |
+| `categoria_status_alterado` | Categoria ativada ou inativada |
+| `transporte_cadastrado` | Transporte criado |
+| `transporte_atualizado` | Transporte atualizado |
+| `transporte_status_alterado` | Transporte ativado ou inativado |
+| `unidade_medida_cadastrada` | Unidade de medida criada |
+| `unidade_medida_atualizada` | Unidade de medida atualizada |
+| `unidade_medida_status_alterado` | Unidade de medida ativada ou inativada |
 
 Formato do envelope:
 
 ```json
 {
   "eventId": "00000000-0000-0000-0000-000000000000",
-  "eventType": "produto.created",
-  "source": "SDI.Micro.Produto",
-  "occurredAt": "2026-04-28T14:00:00Z",
-  "aggregateType": "produto",
-  "aggregateId": "00000000-0000-0000-0000-000000000000",
-  "userId": null,
+  "eventType": "produto_cadastrado",
+  "eventVersion": "1.0",
+  "timestamp": "2026-04-28T14:00:00Z",
+  "source": "produtos-service",
+  "correlationId": "00000000-0000-0000-0000-000000000000",
   "payload": {}
 }
 ```
 
 Observacao sobre autenticacao:
 
-- `userId` e preenchido a partir de `usuarioCadastro` ou `usuarioAlteracao`, quando informado.
-- Como a autenticacao ainda sera definida por outro microservico, o campo continua opcional e nao existe dependencia de token/JWT nesta implementacao.
-- Quando o contrato de autenticacao estiver definido, basta trocar a origem do usuario nos controllers/services sem alterar o envelope Kafka.
+- Como a autenticacao ainda sera definida por outro microservico, nao existe dependencia de token/JWT nesta implementacao.
+- `usuarioCadastro` e `usuarioAlteracao` continuam opcionais nos endpoints REST para uso futuro, mas nao entram no envelope Kafka atual porque o contrato sugerido centraliza dados de integracao em `payload`.
+- Quando o contrato de autenticacao estiver definido, basta trocar a origem do usuario nos controllers/services sem quebrar o contrato do evento.
 
 ## Health check
 
@@ -1266,7 +1258,6 @@ Exemplos:
 | `usuario_alteracao` | `UsuarioAlteracao` |
 | `categoria_pai_id` | `CategoriaPaiId` |
 | `unidade_medida_id` | `UnidadeMedidaId` |
-| `quantidade_total` | `QuantidadeTotal` |
 
 Os repositories usam:
 
@@ -1438,7 +1429,6 @@ Verifique:
 - `transporteId` existe e esta ativo.
 - `categoriaId` existe e esta ativa.
 - `unidadeMedidaId` existe e esta ativa.
-- `quantidadeTotal` e maior ou igual a zero.
 - `codigo` nao esta duplicado.
 
 ## Evolucoes recomendadas

@@ -69,7 +69,6 @@ internal static class MappingExtensions
             Codigo = entity.Codigo,
             Nome = entity.Nome,
             Descricao = entity.Descricao,
-            QuantidadeTotal = entity.QuantidadeTotal,
             Ativo = entity.Ativo,
             DataCadastro = entity.DataCadastro,
             UltimaAlteracao = entity.UltimaAlteracao

@@ -9,9 +9,9 @@ internal static class ServiceValidation
         return (Math.Max(1, pagina), Math.Clamp(tamanhoPagina, 1, 100));
     }
 
-    public static string Required(string value, string fieldName, int maxLength)
+    public static string Required(string? value, string fieldName, int maxLength)
     {
-        var normalized = value.Trim();
+        var normalized = value?.Trim();
         if (string.IsNullOrWhiteSpace(normalized))
         {
             throw new DomainException($"{fieldName} e obrigatorio.");
@@ -23,6 +23,16 @@ internal static class ServiceValidation
         }
 
         return normalized;
+    }
+
+    public static Guid RequiredGuid(Guid value, string fieldName)
+    {
+        if (value == Guid.Empty)
+        {
+            throw new DomainException($"{fieldName} e obrigatorio.");
+        }
+
+        return value;
     }
 
     public static string? Optional(string? value, string fieldName, int maxLength)

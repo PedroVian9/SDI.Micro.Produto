@@ -74,8 +74,6 @@ CREATE TABLE IF NOT EXISTS sdi.produto (
     nome VARCHAR(150) NOT NULL,
     descricao VARCHAR(1000) NULL,
 
-    quantidade_total NUMERIC(18,4) NOT NULL DEFAULT 0,
-
     ativo BOOLEAN NOT NULL DEFAULT TRUE,
 
     data_cadastro TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -94,11 +92,36 @@ CREATE TABLE IF NOT EXISTS sdi.produto (
 
     CONSTRAINT fk_produto_unidade_medida
         FOREIGN KEY (unidade_medida_id)
-        REFERENCES sdi.unidade_medida(id),
-
-    CONSTRAINT ck_produto_quantidade_total
-        CHECK (quantidade_total >= 0)
+        REFERENCES sdi.unidade_medida(id)
 );
+
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'ck_produto_quantidade_total'
+    ) THEN
+        ALTER TABLE sdi.produto
+        DROP CONSTRAINT ck_produto_quantidade_total;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'ck_produto_preco'
+    ) THEN
+        ALTER TABLE sdi.produto
+        DROP CONSTRAINT ck_produto_preco;
+    END IF;
+END;
+$$;
+
+ALTER TABLE sdi.produto
+DROP COLUMN IF EXISTS preco;
+
+ALTER TABLE sdi.produto
+DROP COLUMN IF EXISTS quantidade_total;
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_sdi_transporte_nome
 ON sdi.transporte (LOWER(nome));

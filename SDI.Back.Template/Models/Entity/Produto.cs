@@ -8,5 +8,4 @@ public sealed class Produto : AuditableEntity
     public string Codigo { get; init; } = string.Empty;
     public string Nome { get; init; } = string.Empty;
     public string? Descricao { get; init; }
-    public decimal QuantidadeTotal { get; init; }
 }
