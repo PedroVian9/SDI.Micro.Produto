@@ -10,15 +10,15 @@ public sealed class CategoriaRepository(IDbConnectionFactory connectionFactory) 
 {
     public async Task<PagedResult<Categoria>> ListarAsync(int pagina, int tamanhoPagina, bool? ativo, string? busca, Guid? categoriaPaiId, CancellationToken cancellationToken)
     {
-        const string sql = """
-            select * from sdi.categoria
+        var sql = $"""
+            select * from {DatabaseIdentifiers.Categoria}
             where (@ativo is null or ativo = @ativo)
               and (@categoriaPaiId is null or categoria_pai_id = @categoriaPaiId)
               and (@busca is null or nome ilike '%' || @busca || '%' or descricao ilike '%' || @busca || '%')
             order by nome
             limit @tamanhoPagina offset @offset;
 
-            select count(1) from sdi.categoria
+            select count(1) from {DatabaseIdentifiers.Categoria}
             where (@ativo is null or ativo = @ativo)
               and (@categoriaPaiId is null or categoria_pai_id = @categoriaPaiId)
               and (@busca is null or nome ilike '%' || @busca || '%' or descricao ilike '%' || @busca || '%');
@@ -33,22 +33,22 @@ public sealed class CategoriaRepository(IDbConnectionFactory connectionFactory) 
 
     public async Task<Categoria?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        const string sql = "select * from sdi.categoria where id = @id;";
+        var sql = $"select * from {DatabaseIdentifiers.Categoria} where id = @id;";
         await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
         return await connection.QuerySingleOrDefaultAsync<Categoria>(new CommandDefinition(sql, new { id }, cancellationToken: cancellationToken));
     }
 
     public async Task<bool> ExisteAsync(Guid id, CancellationToken cancellationToken)
     {
-        const string sql = "select exists(select 1 from sdi.categoria where id = @id and ativo = true);";
+        var sql = $"select exists(select 1 from {DatabaseIdentifiers.Categoria} where id = @id and ativo = true);";
         await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
         return await connection.ExecuteScalarAsync<bool>(new CommandDefinition(sql, new { id }, cancellationToken: cancellationToken));
     }
 
     public async Task<Categoria> CriarAsync(Categoria categoria, CancellationToken cancellationToken)
     {
-        const string sql = """
-            insert into sdi.categoria (categoria_pai_id, nome, descricao, usuario_cadastro)
+        var sql = $"""
+            insert into {DatabaseIdentifiers.Categoria} (categoria_pai_id, nome, descricao, usuario_cadastro)
             values (@categoriaPaiId, @nome, @descricao, @usuarioCadastro)
             returning *;
             """;
@@ -58,8 +58,8 @@ public sealed class CategoriaRepository(IDbConnectionFactory connectionFactory) 
 
     public async Task<Categoria?> AtualizarAsync(Categoria categoria, CancellationToken cancellationToken)
     {
-        const string sql = """
-            update sdi.categoria
+        var sql = $"""
+            update {DatabaseIdentifiers.Categoria}
                set categoria_pai_id = @categoriaPaiId,
                    nome = @nome,
                    descricao = @descricao,
@@ -73,8 +73,8 @@ public sealed class CategoriaRepository(IDbConnectionFactory connectionFactory) 
 
     public async Task<bool> DefinirAtivoAsync(Guid id, bool ativo, Guid? usuarioAlteracao, CancellationToken cancellationToken)
     {
-        const string sql = """
-            update sdi.categoria
+        var sql = $"""
+            update {DatabaseIdentifiers.Categoria}
                set ativo = @ativo,
                    usuario_alteracao = @usuarioAlteracao
              where id = @id;

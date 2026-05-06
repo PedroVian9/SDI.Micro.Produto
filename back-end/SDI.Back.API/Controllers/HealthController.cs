@@ -10,10 +10,22 @@ namespace SDI.Back.API.Controllers;
 [Route("saude")]
 public class HealthController(HealthCheckService healthCheckService) : ControllerBase
 {
+    [HttpGet("/health")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public IActionResult GetHealth()
+    {
+        var serviceName = Environment.GetEnvironmentVariable("SERVICE_NAME");
+        return Ok(new
+        {
+            status = "ok",
+            service = string.IsNullOrWhiteSpace(serviceName) ? "produtos-service" : serviceName
+        });
+    }
+
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<HealthCheckResponse>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ApiResponse<HealthCheckResponse>), (int)HttpStatusCode.ServiceUnavailable)]
-    public async Task<IActionResult> Get()
+    public async Task<IActionResult> GetDetailed()
     {
         var report = await healthCheckService.CheckHealthAsync();
         

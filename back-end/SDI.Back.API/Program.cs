@@ -50,11 +50,8 @@ var app = builder.Build();
 
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
-if (!app.Environment.IsProduction())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

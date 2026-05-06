@@ -50,11 +50,18 @@ public sealed class KafkaEventPublisher : IKafkaEventPublisher, IDisposable
             return;
         }
 
+        if (options.AllowedEventTypes.Count > 0 &&
+            !options.AllowedEventTypes.Contains(integrationEvent.EventType, StringComparer.Ordinal))
+        {
+            logger.LogDebug("Publicacao Kafka ignorada porque o evento nao faz parte do contrato oficial. EventType: {EventType}", integrationEvent.EventType);
+            return;
+        }
+
         try
         {
             var payload = JsonSerializer.Serialize(integrationEvent, JsonOptions);
             var result = await producer.ProduceAsync(
-                options.EventsTopic,
+                integrationEvent.EventType,
                 new Message<string, string>
                 {
                     Key = integrationEvent.AggregateId.ToString(),

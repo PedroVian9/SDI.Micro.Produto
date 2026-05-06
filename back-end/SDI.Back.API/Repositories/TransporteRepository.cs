@@ -10,14 +10,14 @@ public sealed class TransporteRepository(IDbConnectionFactory connectionFactory)
 {
     public async Task<PagedResult<Transporte>> ListarAsync(int pagina, int tamanhoPagina, bool? ativo, string? busca, CancellationToken cancellationToken)
     {
-        const string sql = """
-            select * from sdi.transporte
+        var sql = $"""
+            select * from {DatabaseIdentifiers.Transporte}
             where (@ativo is null or ativo = @ativo)
               and (@busca is null or nome ilike '%' || @busca || '%' or descricao ilike '%' || @busca || '%')
             order by nome
             limit @tamanhoPagina offset @offset;
 
-            select count(1) from sdi.transporte
+            select count(1) from {DatabaseIdentifiers.Transporte}
             where (@ativo is null or ativo = @ativo)
               and (@busca is null or nome ilike '%' || @busca || '%' or descricao ilike '%' || @busca || '%');
             """;
@@ -31,22 +31,22 @@ public sealed class TransporteRepository(IDbConnectionFactory connectionFactory)
 
     public async Task<Transporte?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        const string sql = "select * from sdi.transporte where id = @id;";
+        var sql = $"select * from {DatabaseIdentifiers.Transporte} where id = @id;";
         await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
         return await connection.QuerySingleOrDefaultAsync<Transporte>(new CommandDefinition(sql, new { id }, cancellationToken: cancellationToken));
     }
 
     public async Task<bool> ExisteAsync(Guid id, CancellationToken cancellationToken)
     {
-        const string sql = "select exists(select 1 from sdi.transporte where id = @id and ativo = true);";
+        var sql = $"select exists(select 1 from {DatabaseIdentifiers.Transporte} where id = @id and ativo = true);";
         await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
         return await connection.ExecuteScalarAsync<bool>(new CommandDefinition(sql, new { id }, cancellationToken: cancellationToken));
     }
 
     public async Task<Transporte> CriarAsync(Transporte transporte, CancellationToken cancellationToken)
     {
-        const string sql = """
-            insert into sdi.transporte (nome, descricao, usuario_cadastro)
+        var sql = $"""
+            insert into {DatabaseIdentifiers.Transporte} (nome, descricao, usuario_cadastro)
             values (@nome, @descricao, @usuarioCadastro)
             returning *;
             """;
@@ -56,8 +56,8 @@ public sealed class TransporteRepository(IDbConnectionFactory connectionFactory)
 
     public async Task<Transporte?> AtualizarAsync(Transporte transporte, CancellationToken cancellationToken)
     {
-        const string sql = """
-            update sdi.transporte
+        var sql = $"""
+            update {DatabaseIdentifiers.Transporte}
                set nome = @nome,
                    descricao = @descricao,
                    usuario_alteracao = @usuarioAlteracao
@@ -70,8 +70,8 @@ public sealed class TransporteRepository(IDbConnectionFactory connectionFactory)
 
     public async Task<bool> DefinirAtivoAsync(Guid id, bool ativo, Guid? usuarioAlteracao, CancellationToken cancellationToken)
     {
-        const string sql = """
-            update sdi.transporte
+        var sql = $"""
+            update {DatabaseIdentifiers.Transporte}
                set ativo = @ativo,
                    usuario_alteracao = @usuarioAlteracao
              where id = @id;

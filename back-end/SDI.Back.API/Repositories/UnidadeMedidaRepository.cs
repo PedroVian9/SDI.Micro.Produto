@@ -10,14 +10,14 @@ public sealed class UnidadeMedidaRepository(IDbConnectionFactory connectionFacto
 {
     public async Task<PagedResult<UnidadeMedida>> ListarAsync(int pagina, int tamanhoPagina, bool? ativo, string? busca, CancellationToken cancellationToken)
     {
-        const string sql = """
-            select * from sdi.unidade_medida
+        var sql = $"""
+            select * from {DatabaseIdentifiers.UnidadeMedida}
             where (@ativo is null or ativo = @ativo)
               and (@busca is null or nome ilike '%' || @busca || '%' or sigla ilike '%' || @busca || '%' or descricao ilike '%' || @busca || '%')
             order by nome
             limit @tamanhoPagina offset @offset;
 
-            select count(1) from sdi.unidade_medida
+            select count(1) from {DatabaseIdentifiers.UnidadeMedida}
             where (@ativo is null or ativo = @ativo)
               and (@busca is null or nome ilike '%' || @busca || '%' or sigla ilike '%' || @busca || '%' or descricao ilike '%' || @busca || '%');
             """;
@@ -31,22 +31,22 @@ public sealed class UnidadeMedidaRepository(IDbConnectionFactory connectionFacto
 
     public async Task<UnidadeMedida?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        const string sql = "select * from sdi.unidade_medida where id = @id;";
+        var sql = $"select * from {DatabaseIdentifiers.UnidadeMedida} where id = @id;";
         await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
         return await connection.QuerySingleOrDefaultAsync<UnidadeMedida>(new CommandDefinition(sql, new { id }, cancellationToken: cancellationToken));
     }
 
     public async Task<bool> ExisteAsync(Guid id, CancellationToken cancellationToken)
     {
-        const string sql = "select exists(select 1 from sdi.unidade_medida where id = @id and ativo = true);";
+        var sql = $"select exists(select 1 from {DatabaseIdentifiers.UnidadeMedida} where id = @id and ativo = true);";
         await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
         return await connection.ExecuteScalarAsync<bool>(new CommandDefinition(sql, new { id }, cancellationToken: cancellationToken));
     }
 
     public async Task<UnidadeMedida> CriarAsync(UnidadeMedida unidadeMedida, CancellationToken cancellationToken)
     {
-        const string sql = """
-            insert into sdi.unidade_medida (nome, sigla, descricao, usuario_cadastro)
+        var sql = $"""
+            insert into {DatabaseIdentifiers.UnidadeMedida} (nome, sigla, descricao, usuario_cadastro)
             values (@nome, @sigla, @descricao, @usuarioCadastro)
             returning *;
             """;
@@ -56,8 +56,8 @@ public sealed class UnidadeMedidaRepository(IDbConnectionFactory connectionFacto
 
     public async Task<UnidadeMedida?> AtualizarAsync(UnidadeMedida unidadeMedida, CancellationToken cancellationToken)
     {
-        const string sql = """
-            update sdi.unidade_medida
+        var sql = $"""
+            update {DatabaseIdentifiers.UnidadeMedida}
                set nome = @nome,
                    sigla = @sigla,
                    descricao = @descricao,
@@ -71,8 +71,8 @@ public sealed class UnidadeMedidaRepository(IDbConnectionFactory connectionFacto
 
     public async Task<bool> DefinirAtivoAsync(Guid id, bool ativo, Guid? usuarioAlteracao, CancellationToken cancellationToken)
     {
-        const string sql = """
-            update sdi.unidade_medida
+        var sql = $"""
+            update {DatabaseIdentifiers.UnidadeMedida}
                set ativo = @ativo,
                    usuario_alteracao = @usuarioAlteracao
              where id = @id;

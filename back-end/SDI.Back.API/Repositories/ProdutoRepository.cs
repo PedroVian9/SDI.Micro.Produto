@@ -17,8 +17,8 @@ public sealed class ProdutoRepository(IDbConnectionFactory connectionFactory) : 
                                                         Guid? unidadeMedidaId,
                                                         CancellationToken cancellationToken)
     {
-        const string sql = """
-            select * from sdi.produto
+        var sql = $"""
+            select * from {DatabaseIdentifiers.Produto}
             where (@ativo is null or ativo = @ativo)
               and (@categoriaId is null or categoria_id = @categoriaId)
               and (@transporteId is null or transporte_id = @transporteId)
@@ -27,7 +27,7 @@ public sealed class ProdutoRepository(IDbConnectionFactory connectionFactory) : 
             order by nome
             limit @tamanhoPagina offset @offset;
 
-            select count(1) from sdi.produto
+            select count(1) from {DatabaseIdentifiers.Produto}
             where (@ativo is null or ativo = @ativo)
               and (@categoriaId is null or categoria_id = @categoriaId)
               and (@transporteId is null or transporte_id = @transporteId)
@@ -58,15 +58,15 @@ public sealed class ProdutoRepository(IDbConnectionFactory connectionFactory) : 
 
     public async Task<Produto?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        const string sql = "select * from sdi.produto where id = @id;";
+        var sql = $"select * from {DatabaseIdentifiers.Produto} where id = @id;";
         await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
         return await connection.QuerySingleOrDefaultAsync<Produto>(new CommandDefinition(sql, new { id }, cancellationToken: cancellationToken));
     }
 
     public async Task<Produto> CriarAsync(Produto produto, CancellationToken cancellationToken)
     {
-        const string sql = """
-            insert into sdi.produto (
+        var sql = $"""
+            insert into {DatabaseIdentifiers.Produto} (
                 transporte_id,
                 categoria_id,
                 unidade_medida_id,
@@ -90,8 +90,8 @@ public sealed class ProdutoRepository(IDbConnectionFactory connectionFactory) : 
 
     public async Task<Produto?> AtualizarAsync(Produto produto, CancellationToken cancellationToken)
     {
-        const string sql = """
-            update sdi.produto
+        var sql = $"""
+            update {DatabaseIdentifiers.Produto}
                set transporte_id = @transporteId,
                    categoria_id = @categoriaId,
                    unidade_medida_id = @unidadeMedidaId,
@@ -108,8 +108,8 @@ public sealed class ProdutoRepository(IDbConnectionFactory connectionFactory) : 
 
     public async Task<bool> DefinirAtivoAsync(Guid id, bool ativo, Guid? usuarioAlteracao, CancellationToken cancellationToken)
     {
-        const string sql = """
-            update sdi.produto
+        var sql = $"""
+            update {DatabaseIdentifiers.Produto}
                set ativo = @ativo,
                    usuario_alteracao = @usuarioAlteracao
              where id = @id;

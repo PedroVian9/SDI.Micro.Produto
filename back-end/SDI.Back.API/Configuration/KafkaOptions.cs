@@ -4,10 +4,10 @@ public sealed class KafkaOptions
 {
     public const string SectionName = "Kafka";
 
-    public bool Enabled { get; init; } = true;
-    public bool FailOnPublishError { get; init; }
-    public string BootstrapServers { get; init; } = "localhost:9092";
-    public string ClientId { get; init; } = "sdi-micro-produto";
-    public string EventsTopic { get; init; } = "sdi.produto.events";
-    public int PublishTimeoutMs { get; init; } = 5000;
+    public bool Enabled { get; set; } = true;
+    public bool FailOnPublishError { get; set; }
+    public string BootstrapServers { get; set; } = "localhost:9092";
+    public string ClientId { get; set; } = "produtos-service";
+    public int PublishTimeoutMs { get; set; } = 5000;
+    public List<string> AllowedEventTypes { get; set; } = [SDI.Back.API.Messaging.EventTypes.ProdutoCriado];
 }
