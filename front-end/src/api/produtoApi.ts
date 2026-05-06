@@ -10,7 +10,7 @@ import type {
 
 const baseURL =
   (import.meta.env.VITE_PRODUTO_API_URL as string | undefined) ??
-  "http://localhost:5242";
+  "/api/produtos";
 
 export const produtoHttp = axios.create({
   baseURL,

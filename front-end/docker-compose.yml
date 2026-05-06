@@ -1,0 +1,16 @@
+services:
+  produtos-front:
+    build:
+      context: .
+      args:
+        VITE_PRODUTO_API_URL: ${FRONTEND_API_URL:-/api/produtos}
+    container_name: produtos-front
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8081}:80"
+    networks:
+      - portal-b2b-network
+
+networks:
+  portal-b2b-network:
+    external: true
