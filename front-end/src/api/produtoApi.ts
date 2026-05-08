@@ -9,7 +9,7 @@ import type {
 } from "@/types/produto";
 
 const baseURL =
-  (import.meta.env.VITE_PRODUTO_API_URL as string | undefined) ??
+  (import.meta.env.VITE_PRODUTO_API_URL as string | undefined)?.trim() ||
   "/api/produtos";
 
 export const produtoHttp = axios.create({

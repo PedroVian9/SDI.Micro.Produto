@@ -17,7 +17,8 @@ services:
     build:
       context: ./front-end
       args:
-        VITE_PRODUTO_API_URL: ${FRONTEND_API_URL:-/api/produtos}
+        VITE_BASE_PATH: ${VITE_BASE_PATH:-/produtos/}
+        VITE_PRODUTO_API_URL: ${VITE_PRODUTO_API_URL:-/api/produtos}
     container_name: produtos-front
     restart: unless-stopped
     ports:
