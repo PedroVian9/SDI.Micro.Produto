@@ -4,7 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import CatalogoProdutoPage from "./CatalogoProdutoPage";
+import { bootstrapAuthToken } from "./api/produtoApi";
 import "./index.css";
+
+bootstrapAuthToken();
 
 const queryClient = new QueryClient({
   defaultOptions: {

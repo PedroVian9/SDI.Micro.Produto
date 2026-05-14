@@ -26,14 +26,14 @@ public sealed class UnidadeMedidaService(IUnidadeMedidaRepository repository, IK
         return entity.ToOutput();
     }
 
-    public async Task<UnidadeMedidaOutput> CriarAsync(UnidadeMedidaInput input, CancellationToken cancellationToken)
+    public async Task<UnidadeMedidaOutput> CriarAsync(UnidadeMedidaInput input, Guid usuarioId, CancellationToken cancellationToken)
     {
         var entity = new UnidadeMedida
         {
             Nome = ServiceValidation.Required(input.Nome, "Nome", 150),
             Sigla = ServiceValidation.Required(input.Sigla, "Sigla", 20).ToUpperInvariant(),
             Descricao = ServiceValidation.Optional(input.Descricao, "Descricao", 500),
-            UsuarioCadastro = input.UsuarioCadastro
+            UsuarioCadastro = usuarioId
         };
 
         var output = (await repository.CriarAsync(entity, cancellationToken)).ToOutput();
@@ -43,14 +43,14 @@ public sealed class UnidadeMedidaService(IUnidadeMedidaRepository repository, IK
             EventType = EventTypes.UnidadeMedidaCriada,
             AggregateType = "unidade-medida",
             AggregateId = output.Id,
-            UserId = input.UsuarioCadastro,
+            UserId = usuarioId,
             Payload = output
         }, cancellationToken);
 
         return output;
     }
 
-    public async Task<UnidadeMedidaOutput> AtualizarAsync(Guid id, UnidadeMedidaInput input, CancellationToken cancellationToken)
+    public async Task<UnidadeMedidaOutput> AtualizarAsync(Guid id, UnidadeMedidaInput input, Guid usuarioId, CancellationToken cancellationToken)
     {
         var entity = new UnidadeMedida
         {
@@ -58,7 +58,7 @@ public sealed class UnidadeMedidaService(IUnidadeMedidaRepository repository, IK
             Nome = ServiceValidation.Required(input.Nome, "Nome", 150),
             Sigla = ServiceValidation.Required(input.Sigla, "Sigla", 20).ToUpperInvariant(),
             Descricao = ServiceValidation.Optional(input.Descricao, "Descricao", 500),
-            UsuarioAlteracao = input.UsuarioAlteracao
+            UsuarioAlteracao = usuarioId
         };
 
         var updated = await repository.AtualizarAsync(entity, cancellationToken)
@@ -70,16 +70,16 @@ public sealed class UnidadeMedidaService(IUnidadeMedidaRepository repository, IK
             EventType = EventTypes.UnidadeMedidaAtualizada,
             AggregateType = "unidade-medida",
             AggregateId = output.Id,
-            UserId = input.UsuarioAlteracao,
+            UserId = usuarioId,
             Payload = output
         }, cancellationToken);
 
         return output;
     }
 
-    public async Task DefinirAtivoAsync(Guid id, bool ativo, Guid? usuarioAlteracao, CancellationToken cancellationToken)
+    public async Task DefinirAtivoAsync(Guid id, bool ativo, Guid usuarioId, CancellationToken cancellationToken)
     {
-        if (!await repository.DefinirAtivoAsync(id, ativo, usuarioAlteracao, cancellationToken))
+        if (!await repository.DefinirAtivoAsync(id, ativo, usuarioId, cancellationToken))
         {
             throw new DomainException("Unidade de medida nao encontrada.", StatusCodes.Status404NotFound);
         }
@@ -89,7 +89,7 @@ public sealed class UnidadeMedidaService(IUnidadeMedidaRepository repository, IK
             EventType = EventTypes.UnidadeMedidaStatusAlterado,
             AggregateType = "unidade-medida",
             AggregateId = id,
-            UserId = usuarioAlteracao,
+            UserId = usuarioId,
             Payload = new StatusChangedPayload
             {
                 Id = id,

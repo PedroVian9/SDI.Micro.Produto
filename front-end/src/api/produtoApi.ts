@@ -12,10 +12,60 @@ const baseURL =
   (import.meta.env.VITE_PRODUTO_API_URL as string | undefined)?.trim() ||
   "/api/produtos";
 
+const TOKEN_STORAGE_KEY = "portal_b2b_jwt";
+
+function readTokenFromQueryString(): string | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  return params.get("jwt");
+}
+
+function stripTokenFromUrl() {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("jwt")) return;
+  url.searchParams.delete("jwt");
+  window.history.replaceState({}, document.title, url.toString());
+}
+
+export function bootstrapAuthToken() {
+  const fromQuery = readTokenFromQueryString();
+  if (fromQuery) {
+    sessionStorage.setItem(TOKEN_STORAGE_KEY, fromQuery);
+    stripTokenFromUrl();
+  }
+}
+
+export function getAuthToken(): string | null {
+  return sessionStorage.getItem(TOKEN_STORAGE_KEY);
+}
+
+export function clearAuthToken() {
+  sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+}
+
 export const produtoHttp = axios.create({
   baseURL,
   headers: { "Content-Type": "application/json" },
 });
+
+produtoHttp.interceptors.request.use((config) => {
+  const token = getAuthToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+produtoHttp.interceptors.response.use(
+  (res) => res,
+  (err: AxiosError) => {
+    if (err.response?.status === 401) {
+      clearAuthToken();
+    }
+    return Promise.reject(err);
+  },
+);
 
 export function extractApiError(err: unknown, fallback = "Erro inesperado"): string {
   if (err instanceof AxiosError) {

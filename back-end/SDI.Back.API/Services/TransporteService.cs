@@ -26,13 +26,13 @@ public sealed class TransporteService(ITransporteRepository repository, IKafkaEv
         return entity.ToOutput();
     }
 
-    public async Task<TransporteOutput> CriarAsync(TransporteInput input, CancellationToken cancellationToken)
+    public async Task<TransporteOutput> CriarAsync(TransporteInput input, Guid usuarioId, CancellationToken cancellationToken)
     {
         var entity = new Transporte
         {
             Nome = ServiceValidation.Required(input.Nome, "Nome", 150),
             Descricao = ServiceValidation.Optional(input.Descricao, "Descricao", 500),
-            UsuarioCadastro = input.UsuarioCadastro
+            UsuarioCadastro = usuarioId
         };
 
         var output = (await repository.CriarAsync(entity, cancellationToken)).ToOutput();
@@ -42,21 +42,21 @@ public sealed class TransporteService(ITransporteRepository repository, IKafkaEv
             EventType = EventTypes.TransporteCriado,
             AggregateType = "transporte",
             AggregateId = output.Id,
-            UserId = input.UsuarioCadastro,
+            UserId = usuarioId,
             Payload = output
         }, cancellationToken);
 
         return output;
     }
 
-    public async Task<TransporteOutput> AtualizarAsync(Guid id, TransporteInput input, CancellationToken cancellationToken)
+    public async Task<TransporteOutput> AtualizarAsync(Guid id, TransporteInput input, Guid usuarioId, CancellationToken cancellationToken)
     {
         var entity = new Transporte
         {
             Id = id,
             Nome = ServiceValidation.Required(input.Nome, "Nome", 150),
             Descricao = ServiceValidation.Optional(input.Descricao, "Descricao", 500),
-            UsuarioAlteracao = input.UsuarioAlteracao
+            UsuarioAlteracao = usuarioId
         };
 
         var updated = await repository.AtualizarAsync(entity, cancellationToken)
@@ -68,16 +68,16 @@ public sealed class TransporteService(ITransporteRepository repository, IKafkaEv
             EventType = EventTypes.TransporteAtualizado,
             AggregateType = "transporte",
             AggregateId = output.Id,
-            UserId = input.UsuarioAlteracao,
+            UserId = usuarioId,
             Payload = output
         }, cancellationToken);
 
         return output;
     }
 
-    public async Task DefinirAtivoAsync(Guid id, bool ativo, Guid? usuarioAlteracao, CancellationToken cancellationToken)
+    public async Task DefinirAtivoAsync(Guid id, bool ativo, Guid usuarioId, CancellationToken cancellationToken)
     {
-        if (!await repository.DefinirAtivoAsync(id, ativo, usuarioAlteracao, cancellationToken))
+        if (!await repository.DefinirAtivoAsync(id, ativo, usuarioId, cancellationToken))
         {
             throw new DomainException("Transporte nao encontrado.", StatusCodes.Status404NotFound);
         }
@@ -87,7 +87,7 @@ public sealed class TransporteService(ITransporteRepository repository, IKafkaEv
             EventType = EventTypes.TransporteStatusAlterado,
             AggregateType = "transporte",
             AggregateId = id,
-            UserId = usuarioAlteracao,
+            UserId = usuarioId,
             Payload = new StatusChangedPayload
             {
                 Id = id,

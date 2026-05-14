@@ -26,7 +26,7 @@ public sealed class CategoriaService(ICategoriaRepository repository, IKafkaEven
         return entity.ToOutput();
     }
 
-    public async Task<CategoriaOutput> CriarAsync(CategoriaInput input, CancellationToken cancellationToken)
+    public async Task<CategoriaOutput> CriarAsync(CategoriaInput input, Guid usuarioId, CancellationToken cancellationToken)
     {
         await ValidarCategoriaPaiAsync(null, input.CategoriaPaiId, cancellationToken);
 
@@ -35,7 +35,7 @@ public sealed class CategoriaService(ICategoriaRepository repository, IKafkaEven
             CategoriaPaiId = input.CategoriaPaiId,
             Nome = ServiceValidation.Required(input.Nome, "Nome", 150),
             Descricao = ServiceValidation.Optional(input.Descricao, "Descricao", 500),
-            UsuarioCadastro = input.UsuarioCadastro
+            UsuarioCadastro = usuarioId
         };
 
         var output = (await repository.CriarAsync(entity, cancellationToken)).ToOutput();
@@ -45,14 +45,14 @@ public sealed class CategoriaService(ICategoriaRepository repository, IKafkaEven
             EventType = EventTypes.CategoriaCriada,
             AggregateType = "categoria",
             AggregateId = output.Id,
-            UserId = input.UsuarioCadastro,
+            UserId = usuarioId,
             Payload = output
         }, cancellationToken);
 
         return output;
     }
 
-    public async Task<CategoriaOutput> AtualizarAsync(Guid id, CategoriaInput input, CancellationToken cancellationToken)
+    public async Task<CategoriaOutput> AtualizarAsync(Guid id, CategoriaInput input, Guid usuarioId, CancellationToken cancellationToken)
     {
         await ValidarCategoriaPaiAsync(id, input.CategoriaPaiId, cancellationToken);
 
@@ -62,7 +62,7 @@ public sealed class CategoriaService(ICategoriaRepository repository, IKafkaEven
             CategoriaPaiId = input.CategoriaPaiId,
             Nome = ServiceValidation.Required(input.Nome, "Nome", 150),
             Descricao = ServiceValidation.Optional(input.Descricao, "Descricao", 500),
-            UsuarioAlteracao = input.UsuarioAlteracao
+            UsuarioAlteracao = usuarioId
         };
 
         var updated = await repository.AtualizarAsync(entity, cancellationToken)
@@ -74,16 +74,16 @@ public sealed class CategoriaService(ICategoriaRepository repository, IKafkaEven
             EventType = EventTypes.CategoriaAtualizada,
             AggregateType = "categoria",
             AggregateId = output.Id,
-            UserId = input.UsuarioAlteracao,
+            UserId = usuarioId,
             Payload = output
         }, cancellationToken);
 
         return output;
     }
 
-    public async Task DefinirAtivoAsync(Guid id, bool ativo, Guid? usuarioAlteracao, CancellationToken cancellationToken)
+    public async Task DefinirAtivoAsync(Guid id, bool ativo, Guid usuarioId, CancellationToken cancellationToken)
     {
-        if (!await repository.DefinirAtivoAsync(id, ativo, usuarioAlteracao, cancellationToken))
+        if (!await repository.DefinirAtivoAsync(id, ativo, usuarioId, cancellationToken))
         {
             throw new DomainException("Categoria nao encontrada.", StatusCodes.Status404NotFound);
         }
@@ -93,7 +93,7 @@ public sealed class CategoriaService(ICategoriaRepository repository, IKafkaEven
             EventType = EventTypes.CategoriaStatusAlterado,
             AggregateType = "categoria",
             AggregateId = id,
-            UserId = usuarioAlteracao,
+            UserId = usuarioId,
             Payload = new StatusChangedPayload
             {
                 Id = id,

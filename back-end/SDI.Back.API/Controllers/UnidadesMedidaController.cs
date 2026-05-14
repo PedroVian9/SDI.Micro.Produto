@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDI.Back.API.Models.Dto.Input;
 using SDI.Back.API.Models.Dto.Output;
@@ -8,11 +9,13 @@ using System.Net;
 namespace SDI.Back.API.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("unidades-medida")]
-public sealed class UnidadesMedidaController(IUnidadeMedidaService service) : ControllerBase
+public sealed class UnidadesMedidaController(IUnidadeMedidaService service, ICurrentUserService currentUser) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<UnidadeMedidaOutput>>), (int)HttpStatusCode.OK)]
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
     public async Task<IActionResult> Listar([FromQuery] int pagina = 1, [FromQuery] int tamanhoPagina = 20, [FromQuery] bool? ativo = true, [FromQuery] string? busca = null, CancellationToken cancellationToken = default)
     {
         var result = await service.ListarAsync(pagina, tamanhoPagina, ativo, busca, cancellationToken);
@@ -21,6 +24,7 @@ public sealed class UnidadesMedidaController(IUnidadeMedidaService service) : Co
 
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<UnidadeMedidaOutput>), (int)HttpStatusCode.OK)]
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
     public async Task<IActionResult> ObterPorId(Guid id, CancellationToken cancellationToken)
     {
         var result = await service.ObterPorIdAsync(id, cancellationToken);
@@ -29,33 +33,37 @@ public sealed class UnidadesMedidaController(IUnidadeMedidaService service) : Co
 
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<UnidadeMedidaOutput>), (int)HttpStatusCode.Created)]
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
     public async Task<IActionResult> Criar([FromBody] UnidadeMedidaInput input, CancellationToken cancellationToken)
     {
-        var result = await service.CriarAsync(input, cancellationToken);
+        var result = await service.CriarAsync(input, currentUser.RequireUserId(), cancellationToken);
         return CreatedAtAction(nameof(ObterPorId), new { id = result.Id }, ApiResponse<UnidadeMedidaOutput>.Created(result));
     }
 
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<UnidadeMedidaOutput>), (int)HttpStatusCode.OK)]
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
     public async Task<IActionResult> Atualizar(Guid id, [FromBody] UnidadeMedidaInput input, CancellationToken cancellationToken)
     {
-        var result = await service.AtualizarAsync(id, input, cancellationToken);
+        var result = await service.AtualizarAsync(id, input, currentUser.RequireUserId(), cancellationToken);
         return Ok(ApiResponse<UnidadeMedidaOutput>.Ok(result));
     }
 
     [HttpPatch("{id:guid}/ativar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Ativar(Guid id, [FromQuery] Guid? usuarioAlteracao, CancellationToken cancellationToken)
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    public async Task<IActionResult> Ativar(Guid id, CancellationToken cancellationToken)
     {
-        await service.DefinirAtivoAsync(id, true, usuarioAlteracao, cancellationToken);
+        await service.DefinirAtivoAsync(id, true, currentUser.RequireUserId(), cancellationToken);
         return NoContent();
     }
 
     [HttpPatch("{id:guid}/inativar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Inativar(Guid id, [FromQuery] Guid? usuarioAlteracao, CancellationToken cancellationToken)
+    [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+    public async Task<IActionResult> Inativar(Guid id, CancellationToken cancellationToken)
     {
-        await service.DefinirAtivoAsync(id, false, usuarioAlteracao, cancellationToken);
+        await service.DefinirAtivoAsync(id, false, currentUser.RequireUserId(), cancellationToken);
         return NoContent();
     }
 }

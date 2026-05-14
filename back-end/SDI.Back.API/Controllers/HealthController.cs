@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using SDI.Back.API.Models.Dto.Output;
@@ -7,6 +8,7 @@ using System.Net;
 namespace SDI.Back.API.Controllers;
 
 [ApiController]
+[AllowAnonymous]
 [Route("saude")]
 public class HealthController(HealthCheckService healthCheckService) : ControllerBase
 {

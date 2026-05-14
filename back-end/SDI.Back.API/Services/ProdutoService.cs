@@ -39,11 +39,11 @@ public sealed class ProdutoService(IProdutoRepository produtoRepository,
         return entity.ToOutput();
     }
 
-    public async Task<ProdutoOutput> CriarAsync(ProdutoInput input, CancellationToken cancellationToken)
+    public async Task<ProdutoOutput> CriarAsync(ProdutoInput input, Guid usuarioId, CancellationToken cancellationToken)
     {
         await ValidarRelacionamentosAsync(input, cancellationToken);
 
-        var entity = ToEntity(Guid.Empty, input, isCreate: true);
+        var entity = ToEntity(Guid.Empty, input, usuarioId, isCreate: true);
         var output = (await produtoRepository.CriarAsync(entity, cancellationToken)).ToOutput();
 
         await kafkaEventPublisher.PublishAsync(new IntegrationEvent<ProdutoOutput>
@@ -51,18 +51,18 @@ public sealed class ProdutoService(IProdutoRepository produtoRepository,
             EventType = EventTypes.ProdutoCriado,
             AggregateType = "produto",
             AggregateId = output.Id,
-            UserId = input.UsuarioCadastro,
+            UserId = usuarioId,
             Payload = output
         }, cancellationToken);
 
         return output;
     }
 
-    public async Task<ProdutoOutput> AtualizarAsync(Guid id, ProdutoInput input, CancellationToken cancellationToken)
+    public async Task<ProdutoOutput> AtualizarAsync(Guid id, ProdutoInput input, Guid usuarioId, CancellationToken cancellationToken)
     {
         await ValidarRelacionamentosAsync(input, cancellationToken);
 
-        var entity = ToEntity(id, input, isCreate: false);
+        var entity = ToEntity(id, input, usuarioId, isCreate: false);
         var updated = await produtoRepository.AtualizarAsync(entity, cancellationToken)
             ?? throw new DomainException("Produto nao encontrado.", StatusCodes.Status404NotFound);
         var output = updated.ToOutput();
@@ -72,16 +72,16 @@ public sealed class ProdutoService(IProdutoRepository produtoRepository,
             EventType = EventTypes.ProdutoAtualizado,
             AggregateType = "produto",
             AggregateId = output.Id,
-            UserId = input.UsuarioAlteracao,
+            UserId = usuarioId,
             Payload = output
         }, cancellationToken);
 
         return output;
     }
 
-    public async Task DefinirAtivoAsync(Guid id, bool ativo, Guid? usuarioAlteracao, CancellationToken cancellationToken)
+    public async Task DefinirAtivoAsync(Guid id, bool ativo, Guid usuarioId, CancellationToken cancellationToken)
     {
-        if (!await produtoRepository.DefinirAtivoAsync(id, ativo, usuarioAlteracao, cancellationToken))
+        if (!await produtoRepository.DefinirAtivoAsync(id, ativo, usuarioId, cancellationToken))
         {
             throw new DomainException("Produto nao encontrado.", StatusCodes.Status404NotFound);
         }
@@ -91,7 +91,7 @@ public sealed class ProdutoService(IProdutoRepository produtoRepository,
             EventType = EventTypes.ProdutoStatusAlterado,
             AggregateType = "produto",
             AggregateId = id,
-            UserId = usuarioAlteracao,
+            UserId = usuarioId,
             Payload = new StatusChangedPayload
             {
                 Id = id,
@@ -122,7 +122,7 @@ public sealed class ProdutoService(IProdutoRepository produtoRepository,
         }
     }
 
-    private static Produto ToEntity(Guid id, ProdutoInput input, bool isCreate)
+    private static Produto ToEntity(Guid id, ProdutoInput input, Guid usuarioId, bool isCreate)
     {
         return new Produto
         {
@@ -133,8 +133,8 @@ public sealed class ProdutoService(IProdutoRepository produtoRepository,
             Codigo = ServiceValidation.Required(input.Codigo, "Codigo", 60).ToUpperInvariant(),
             Nome = ServiceValidation.Required(input.Nome, "Nome", 150),
             Descricao = ServiceValidation.Optional(input.Descricao, "Descricao", 1000),
-            UsuarioCadastro = isCreate ? input.UsuarioCadastro : null,
-            UsuarioAlteracao = isCreate ? null : input.UsuarioAlteracao
+            UsuarioCadastro = isCreate ? usuarioId : null,
+            UsuarioAlteracao = isCreate ? null : usuarioId
         };
     }
 }
