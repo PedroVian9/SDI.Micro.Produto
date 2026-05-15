@@ -17,30 +17,42 @@ const TOKEN_STORAGE_KEY = "portal_b2b_jwt";
 function readTokenFromQueryString(): string | null {
   if (typeof window === "undefined") return null;
   const params = new URLSearchParams(window.location.search);
-  return params.get("jwt");
+  return params.get("jwt") || params.get("token") || params.get("access_token");
 }
 
 function stripTokenFromUrl() {
   if (typeof window === "undefined") return;
   const url = new URL(window.location.href);
-  if (!url.searchParams.has("jwt")) return;
-  url.searchParams.delete("jwt");
+  let changed = false;
+  for (const key of ["jwt", "token", "access_token"]) {
+    if (url.searchParams.has(key)) {
+      url.searchParams.delete(key);
+      changed = true;
+    }
+  }
+  if (!changed) return;
   window.history.replaceState({}, document.title, url.toString());
 }
 
 export function bootstrapAuthToken() {
   const fromQuery = readTokenFromQueryString();
   if (fromQuery) {
-    sessionStorage.setItem(TOKEN_STORAGE_KEY, fromQuery);
+    saveAuthToken(fromQuery);
     stripTokenFromUrl();
   }
 }
 
+export function saveAuthToken(token: string) {
+  localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+}
+
 export function getAuthToken(): string | null {
-  return sessionStorage.getItem(TOKEN_STORAGE_KEY);
+  return localStorage.getItem(TOKEN_STORAGE_KEY) || sessionStorage.getItem(TOKEN_STORAGE_KEY);
 }
 
 export function clearAuthToken() {
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
   sessionStorage.removeItem(TOKEN_STORAGE_KEY);
 }
 
@@ -59,12 +71,7 @@ produtoHttp.interceptors.request.use((config) => {
 
 produtoHttp.interceptors.response.use(
   (res) => res,
-  (err: AxiosError) => {
-    if (err.response?.status === 401) {
-      clearAuthToken();
-    }
-    return Promise.reject(err);
-  },
+  (err: AxiosError) => Promise.reject(err),
 );
 
 export function extractApiError(err: unknown, fallback = "Erro inesperado"): string {
