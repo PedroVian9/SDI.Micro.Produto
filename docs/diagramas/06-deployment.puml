@@ -1,0 +1,57 @@
+@startuml Diagrama de Implantacao
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+
+skinparam node {
+    BackgroundColor #EBF5FB
+    BorderColor #2980B9
+    FontColor #1A252F
+}
+
+skinparam artifact {
+    BackgroundColor #EAFAF1
+    BorderColor #27AE60
+}
+
+skinparam database {
+    BackgroundColor #FEF9E7
+    BorderColor #F39C12
+}
+
+title Diagrama de Implantacao - Portal B2B (Docker Compose)
+
+node "Host Docker" as HOST {
+
+    node "Container: produtos-front\n[nginx:1.27-alpine]\nport 8081:80" as FE_CONT {
+        artifact "React App (dist)\nbuilded by Vite 5" as FE_APP
+        artifact "nginx.conf\n(SPA routing)" as NGINX_CONF
+    }
+
+    node "Container: produtos-service\n[aspnet:10.0]\nport 5002:5002" as API_CONT {
+        artifact "SDI.Back.API.dll\n(.NET 10 Release)" as API_DLL
+        artifact "appsettings.json\n+ env overrides" as API_CFG
+    }
+
+    node "Container: auth-service\n[equipe de autenticacao]\nport 5001" as AUTH_CONT {
+        artifact "Auth Service\n(JWT issuer)" as AUTH_APP
+    }
+
+    node "Container: redpanda\n[Kafka-compatible]\nport 9092" as KAFKA_CONT {
+        artifact "Redpanda Broker\n(Topics: produtos, etc.)" as KAFKA_APP
+    }
+
+    database "Container: postgres\n[postgres:16]\nport 5432" as PG_CONT {
+        artifact "portal_b2b DB\n(schema: portal_b2b)" as PG_DB
+    }
+}
+
+note "Docker Network:\nportal-b2b-network\n(bridge)" as NET
+
+FE_CONT ..> API_CONT : "HTTP REST\n/api/produtos"
+API_CONT ..> PG_CONT : "Npgsql\nConnection Pool\n(max 100)"
+API_CONT ..> KAFKA_CONT : "Confluent.Kafka\nProducer"
+API_CONT ..> AUTH_CONT : "JWT validation\n(shared secret)"
+FE_CONT ..> AUTH_CONT : "Login /\nRefresh Token"
+
+@enduml

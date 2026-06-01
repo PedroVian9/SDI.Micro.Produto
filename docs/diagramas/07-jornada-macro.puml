@@ -1,0 +1,59 @@
+@startuml Jornada Macro do Usuario
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam swimlaneWidth 160
+
+skinparam activity {
+    BackgroundColor #EBF5FB
+    BorderColor #2980B9
+    FontColor #1A252F
+    StartColor #27AE60
+    EndColor #E74C3C
+}
+
+title Jornada Macro do Usuario - Portal B2B (Visao Geral)
+
+|Usuario|
+start
+:Acessa o Portal B2B;
+:Realiza Login;
+
+|#FDEDEC|Microsservico Auth|
+:Autentica credenciais;
+:Emite JWT Token;
+
+|Usuario|
+:Seleciona modulo\n(ex.: Produtos);
+
+|#EBF5FB|Microsservico Produtos|
+if (Acao desejada?) then (Cadastrar produto)
+    :Consulta dados de suporte\n(categorias, transportes, unidades);
+    :Usuario preenche formulario;
+    :Valida e persiste produto;
+    :Publica evento Kafka;
+elseif (Listar / Buscar) then (Sim)
+    :Consulta paginada com filtros;
+    :Retorna lista de produtos;
+elseif (Editar produto) then (Sim)
+    :Carrega dados do produto;
+    :Usuario edita campos;
+    :Persiste alteracoes;
+    :Publica evento Kafka;
+else (Inativar produto)
+    :Aplica soft-delete;
+    :Publica evento de status;
+endif
+
+|#EAFAF1|Kafka (Redpanda)|
+:Distribui eventos para\nconsumidores interessados;
+
+|#FEF9E7|Outros Microsservicos|
+:Fornecedores atualiza\ncatalogo de cotacoes;
+:Pedidos atualiza\nprodutos disponiveis;
+
+|Usuario|
+:Visualiza confirmacao\nda operacao;
+stop
+
+@enduml

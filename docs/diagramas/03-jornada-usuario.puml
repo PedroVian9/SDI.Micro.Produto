@@ -1,0 +1,101 @@
+@startuml Jornada do Usuario - Gestao de Produtos
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+
+skinparam participant {
+    BackgroundColor #EBF5FB
+    BorderColor #2980B9
+    FontColor #1A252F
+}
+
+skinparam actor {
+    BackgroundColor #FDEDEC
+    BorderColor #E74C3C
+}
+
+title Jornada do Usuario - Cadastro e Gestao de Produtos
+
+actor "Gestor\n(Usuario)" as USER
+participant "Frontend\n(React)" as FE
+participant "produtos-service\n(ASP.NET Core)" as API
+participant "auth-service\n(JWT)" as AUTH
+database "PostgreSQL\n(portal_b2b)" as DB
+participant "Kafka\n(Redpanda)" as KAFKA
+
+== Autenticacao ==
+USER -> FE : Acessa o portal
+FE -> AUTH : POST /auth/login\n{email, senha}
+AUTH --> FE : JWT Token (Bearer)
+FE -> FE : Armazena token (Zustand)
+
+== Configuracao de Suporte (Pre-requisitos) ==
+USER -> FE : Navega para Transportes
+FE -> API : POST /transportes\n{nome, descricao}\nAuthorization: Bearer <token>
+API -> AUTH : Valida JWT
+AUTH --> API : Claims do usuario
+API -> DB : INSERT INTO produtos_transporte
+DB --> API : Transporte criado
+API -> KAFKA : Publica: transporte_cadastrado
+API --> FE : 201 Created {id, nome}
+
+USER -> FE : Navega para Categorias
+FE -> API : POST /categorias\n{nome, categoriaPaiId?}
+API -> DB : INSERT INTO produtos_categoria
+DB --> API : Categoria criada
+API -> KAFKA : Publica: categoria_cadastrada
+API --> FE : 201 Created {id, nome}
+
+USER -> FE : Navega para Unidades de Medida
+FE -> API : POST /unidades-medida\n{nome, sigla}
+API -> DB : INSERT INTO produtos_unidade_medida
+DB --> API : Unidade criada
+API --> FE : 201 Created {id, nome, sigla}
+
+== Cadastro de Produto ==
+USER -> FE : Navega para Produtos -> Novo
+FE -> API : GET /transportes\nGET /categorias\nGET /unidades-medida
+API -> DB : SELECT ativos de cada tabela
+DB --> API : Listas de suporte
+API --> FE : Dados para selecao
+
+USER -> FE : Preenche formulario\n(codigo, nome, categoria,\ntransporte, unidade medida)
+FE -> FE : Validacao Zod\n(campos obrigatorios)
+FE -> API : POST /produtos\n{codigo, nome, descricao,\ncategoriaId, transporteId,\nunidadeMedidaId}
+API -> DB : Verifica existencia das FKs
+API -> DB : INSERT INTO produtos_produto
+DB --> API : Produto criado
+API -> KAFKA : Publica: produto_cadastrado
+API --> FE : 201 Created {produto}
+FE --> USER : Exibe: "Produto cadastrado!"
+
+== Listagem e Busca ==
+USER -> FE : Navega para lista de produtos
+FE -> API : GET /produtos?pagina=1\n&tamanhoPagina=20&busca=...
+API -> DB : SELECT produtos + JOINs\nWHERE ativo = TRUE
+DB --> API : {itens[], total, pagina}
+API --> FE : Resposta paginada
+FE --> USER : Exibe grid com produtos
+
+== Atualizacao ==
+USER -> FE : Clica em editar produto
+FE -> API : GET /produtos/{id}
+API -> DB : SELECT produto por ID
+DB --> API : Produto
+API --> FE : Dados atuais
+USER -> FE : Altera campos
+FE -> API : PUT /produtos/{id}\n{dados atualizados}
+API -> DB : UPDATE produtos_produto
+DB --> API : Produto atualizado
+API -> KAFKA : Publica: produto_atualizado
+API --> FE : 200 OK {produto}
+
+== Inativacao ==
+USER -> FE : Clica em inativar
+FE -> API : PATCH /produtos/{id}/inativar
+API -> DB : UPDATE SET ativo = FALSE
+API -> KAFKA : Publica: produto_status_alterado
+API --> FE : 200 OK
+
+@enduml

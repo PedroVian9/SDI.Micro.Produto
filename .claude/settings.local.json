@@ -1,7 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dotnet build *)"
+      "Bash(dotnet build *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\pedro.viana\\\\PedroVianaDEV\\\\PESSOAL\\\\SDI.Micro.Produto\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\pedro.viana\\\\PedroVianaDEV\\\\PESSOAL\\\\SDI.Micro.Produto\\\\docs\\\\diagramas\")",
+      "Bash(Out-Null)",
+      "Bash(Write-Host \"Dirs created\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\pedro.viana\\\\PedroVianaDEV\\\\PESSOAL\\\\SDI.Micro.Produto\\\\docs\\\\diagramas\")",
+      "PowerShell(cd \"C:\\\\Users\\\\pedro.viana\\\\PedroVianaDEV\\\\PESSOAL\\\\SDI.Micro.Produto\\\\docs\"; $env:NODE_PATH = \"C:\\\\Users\\\\pedro.viana\\\\AppData\\\\Roaming\\\\npm\\\\node_modules\"; node -e \"require\\('docx'\\); console.log\\('ok'\\)\")",
+      "PowerShell($skillDir = \"C:\\\\Users\\\\pedro.viana\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\bd6b9ce9-a326-42e4-9065-7241afabe785\\\\d64cbd86-48cb-4089-8487-5ae3856e0b27\\\\skills\\\\docx\"; python \"$skillDir\\\\scripts\\\\office\\\\validate.py\" \"C:\\\\Users\\\\pedro.viana\\\\PedroVianaDEV\\\\PESSOAL\\\\SDI.Micro.Produto\\\\docs\\\\relatorio-tecnico.docx\")",
+      "PowerShell(Get-ChildItem -Recurse \"C:\\\\Users\\\\pedro.viana\\\\PedroVianaDEV\\\\PESSOAL\\\\SDI.Micro.Produto\\\\docs\" | Select-Object Name, @{N='Tamanho';E={if\\($_.PSIsContainer\\){'[dir]'}else{\"$\\([math]::Round\\($_.Length/1KB,1\\)\\) KB\"}}})"
     ]
   }
 }

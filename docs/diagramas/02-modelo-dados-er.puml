@@ -1,0 +1,86 @@
+@startuml Modelo de Dados - Microsservico de Produtos
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam linetype ortho
+skinparam class {
+    BackgroundColor #EBF5FB
+    BorderColor #2980B9
+    HeaderBackgroundColor #2980B9
+    HeaderFontColor white
+    FontColor #1A252F
+}
+
+title Modelo Entidade-Relacionamento - Schema portal_b2b (Produtos)
+
+entity "produtos_transporte" as TRANSPORT {
+    * id : UUID <<PK>>
+    --
+    * nome : VARCHAR(150) UNIQUE
+    descricao : VARCHAR(500)
+    * ativo : BOOLEAN = TRUE
+    * data_cadastro : TIMESTAMPTZ
+    usuario_cadastro : UUID
+    ultima_alteracao : TIMESTAMPTZ
+    usuario_alteracao : UUID
+}
+
+entity "produtos_categoria" as CATEGORY {
+    * id : UUID <<PK>>
+    --
+    categoria_pai_id : UUID <<FK>>
+    * nome : VARCHAR(150) UNIQUE
+    descricao : VARCHAR(500)
+    * ativo : BOOLEAN = TRUE
+    * data_cadastro : TIMESTAMPTZ
+    usuario_cadastro : UUID
+    ultima_alteracao : TIMESTAMPTZ
+    usuario_alteracao : UUID
+}
+
+entity "produtos_unidade_medida" as UNIT {
+    * id : UUID <<PK>>
+    --
+    * nome : VARCHAR(150) UNIQUE
+    * sigla : VARCHAR(20) UNIQUE UPPERCASE
+    descricao : VARCHAR(500)
+    * ativo : BOOLEAN = TRUE
+    * data_cadastro : TIMESTAMPTZ
+    usuario_cadastro : UUID
+    ultima_alteracao : TIMESTAMPTZ
+    usuario_alteracao : UUID
+}
+
+entity "produtos_produto" as PRODUCT {
+    * id : UUID <<PK>>
+    --
+    * transporte_id : UUID <<FK>>
+    * categoria_id : UUID <<FK>>
+    * unidade_medida_id : UUID <<FK>>
+    * codigo : VARCHAR(60) UNIQUE UPPERCASE
+    * nome : VARCHAR(150)
+    descricao : VARCHAR(1000)
+    * ativo : BOOLEAN = TRUE
+    * data_cadastro : TIMESTAMPTZ
+    usuario_cadastro : UUID
+    ultima_alteracao : TIMESTAMPTZ
+    usuario_alteracao : UUID
+}
+
+CATEGORY ||--o{ CATEGORY : "categoria_pai_id\n(hierarquia)"
+TRANSPORT ||--o{ PRODUCT : "transporte_id"
+CATEGORY  ||--o{ PRODUCT : "categoria_id"
+UNIT      ||--o{ PRODUCT : "unidade_medida_id"
+
+note bottom of PRODUCT
+  Catalogo puro: sem preco e sem estoque.
+  Preco pertence ao dominio Fornecedor.
+  Estoque pertence ao dominio Inventario.
+end note
+
+note right of CATEGORY
+  Suporte a hierarquia de N niveis via
+  auto-referencia (categoria_pai_id).
+end note
+
+@enduml

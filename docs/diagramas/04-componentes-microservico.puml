@@ -1,0 +1,140 @@
+@startuml Componentes Internos - Microsservico de Produtos
+
+top to bottom direction
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+
+skinparam component {
+    BackgroundColor #EBF5FB
+    BorderColor #2980B9
+    FontColor #1A252F
+}
+
+skinparam package {
+    BackgroundColor #FDFEFE
+    BorderColor #85929E
+    FontColor #1A252F
+}
+
+skinparam interface {
+    BackgroundColor #EAFAF1
+    BorderColor #27AE60
+    FontColor #1A252F
+}
+
+skinparam note {
+    BackgroundColor #FEF9E7
+    BorderColor #F39C12
+}
+
+title Diagrama de Componentes - produtos-service (ASP.NET Core 10)
+
+interface "HTTP/REST\n:5002" as HTTP
+interface "JWT Bearer\nMiddleware" as JWTMW
+interface "PostgreSQL\nNpgsql + Dapper" as PG
+interface "Kafka\nConfluent.Kafka" as KF
+
+package "Entrada HTTP" {
+    component "GlobalExceptionMiddleware" as GEM
+
+    package "Controllers" {
+        component "ProdutosController" as PC
+        component "CategoriasController" as CC
+        component "TransportesController" as TC
+        component "UnidadesMedidaController" as UC
+        component "SaudeController" as HC
+    }
+}
+
+package "Aplicacao" {
+    package "Services" {
+        component "ProdutoService" as PS
+        component "CategoriaService" as CS
+        component "TransporteService" as TS
+        component "UnidadeMedidaService" as US
+    }
+
+    package "Suporte" {
+        component "ServiceValidation" as SV
+        component "ICurrentUserService" as CUS
+        component "HealthCheck" as HLT
+    }
+}
+
+package "Persistencia e Integracao" {
+    package "Repositories" {
+        component "ProdutoRepository" as PR
+        component "CategoriaRepository" as CR
+        component "TransporteRepository" as TR
+        component "UnidadeMedidaRepository" as UR
+    }
+
+    package "Infraestrutura" {
+        component "IDbConnectionFactory" as DBF
+        component "IKafkaEventPublisher" as KP
+        component "JwtOptions" as JWT
+    }
+}
+
+HTTP --> GEM
+GEM --> PC
+GEM --> CC
+GEM --> TC
+GEM --> UC
+GEM --> HC
+JWTMW --> GEM
+JWTMW --> JWT
+
+PC --> PS
+CC --> CS
+TC --> TS
+UC --> US
+HC --> HLT
+
+PS --> PR
+CS --> CR
+TS --> TR
+US --> UR
+
+PS --> SV
+CS --> SV
+TS --> SV
+US --> SV
+
+PS --> CUS
+CS --> CUS
+
+PS --> KP
+CS --> KP
+TS --> KP
+US --> KP
+
+PR --> DBF
+CR --> DBF
+TR --> DBF
+UR --> DBF
+HLT --> DBF
+
+DBF --> PG
+KP --> KF
+
+note right of PC
+  Cada controller expone endpoints REST
+  para o agregado correspondente.
+end note
+
+note right of SV
+  Regras compartilhadas de validacao
+  aplicadas antes de persistir ou publicar eventos.
+end note
+
+note right of KP
+  Publica eventos de dominio
+  apos operacoes de escrita.
+end note
+
+@enduml

@@ -1,0 +1,89 @@
+@startuml Arquitetura Geral - Portal B2B
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam rectangle {
+    BackgroundColor #EBF5FB
+    BorderColor #2980B9
+    FontColor #1A252F
+}
+
+skinparam database {
+    BackgroundColor #EAFAF1
+    BorderColor #27AE60
+}
+
+skinparam node {
+    BackgroundColor #FEF9E7
+    BorderColor #F39C12
+}
+
+skinparam cloud {
+    BackgroundColor #FDEDEC
+    BorderColor #E74C3C
+}
+
+title Portal B2B - Diagrama de Arquitetura Geral
+
+actor "Usuario\n(Navegador)" as User
+
+node "Docker Network\nportal-b2b-network" {
+
+    node "Frontend Layer" {
+        rectangle "produtos-front\n[React + Vite]\n:8081" as FE
+    }
+
+    node "API Gateway / Reverse Proxy" {
+        rectangle "Nginx / Gateway\n[Roteamento]\n:80 / :443" as GW
+    }
+
+    node "Microsservico: Autenticacao" {
+        rectangle "auth-service\n[.NET 10 / Node]\n:5001" as AUTH
+    }
+
+    node "Microsservico: Produtos" {
+        rectangle "produtos-service\n[ASP.NET Core 10]\n:5002" as PROD
+    }
+
+    node "Microsservico: Fornecedores\n(equipe externa)" {
+        rectangle "fornecedores-service\n:5003" as FORN
+    }
+
+    node "Microsservico: Pedidos\n(equipe externa)" {
+        rectangle "pedidos-service\n:5004" as PED
+    }
+
+    node "Message Broker" {
+        rectangle "Apache Kafka\n(Redpanda)\n:9092" as KAFKA
+    }
+
+    database "PostgreSQL 16\nportal_b2b\n:5432" as PG {
+        rectangle "schema: portal_b2b\n(produtos)" as SCHEMA_PROD
+        rectangle "schema: auth\n(usuarios)" as SCHEMA_AUTH
+        rectangle "schema: fornecedores" as SCHEMA_FORN
+    }
+}
+
+User --> FE : HTTPS
+FE --> GW : HTTP/REST
+GW --> AUTH : /api/auth
+GW --> PROD : /api/produtos
+GW --> FORN : /api/fornecedores
+GW --> PED  : /api/pedidos
+
+PROD --> PG : Dapper/Npgsql\n(Connection Pool)
+AUTH --> PG : ORM
+FORN --> PG : ORM
+
+PROD --> KAFKA : Publica eventos\n(produto_cadastrado, etc.)
+FORN --> KAFKA : Publica eventos
+PED  --> KAFKA : Consome eventos\n(catalogo de produtos)
+
+AUTH --> PROD : JWT Token\n(validacao stateless)
+AUTH --> FORN : JWT Token
+AUTH --> PED  : JWT Token
+
+@enduml

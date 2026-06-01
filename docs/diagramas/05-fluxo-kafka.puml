@@ -1,0 +1,80 @@
+@startuml Fluxo de Eventos Kafka
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+
+skinparam queue {
+    BackgroundColor #FEF9E7
+    BorderColor #F39C12
+}
+
+skinparam component {
+    BackgroundColor #EBF5FB
+    BorderColor #2980B9
+}
+
+skinparam rectangle {
+    BackgroundColor #EAFAF1
+    BorderColor #27AE60
+}
+
+title Integracao via Kafka - Eventos do Microsservico de Produtos
+
+component "produtos-service\n(Publisher)" as PROD
+
+queue "produto_cadastrado" as T1
+queue "produto_atualizado" as T2
+queue "produto_status_alterado" as T3
+queue "categoria_cadastrada" as T4
+queue "categoria_atualizada" as T5
+queue "categoria_status_alterado" as T6
+queue "transporte_cadastrado" as T7
+queue "transporte_atualizado" as T8
+queue "transporte_status_alterado" as T9
+queue "unidade_medida_cadastrada" as T10
+queue "unidade_medida_atualizada" as T11
+queue "unidade_medida_status_alterado" as T12
+
+component "pedidos-service\n(Consumer)" as PED
+component "fornecedores-service\n(Consumer)" as FORN
+component "analytics-service\n(Consumer - futuro)" as AN
+
+PROD --> T1
+PROD --> T2
+PROD --> T3
+PROD --> T4
+PROD --> T5
+PROD --> T6
+PROD --> T7
+PROD --> T8
+PROD --> T9
+PROD --> T10
+PROD --> T11
+PROD --> T12
+
+T1 --> PED : "Atualiza catalogo\nde produtos disponiveis"
+T2 --> PED : "Sincroniza dados\ndo produto"
+T3 --> PED : "Remove produto\nde pedidos futuros"
+T4 --> FORN : "Categorias disponiveis\npara associacao"
+T1 --> FORN : "Novo produto para\ncotacao de preco"
+T1 --> AN
+T2 --> AN
+T3 --> AN
+
+note right of PROD
+  Envelope de evento padrao:
+  {
+    "eventId": "UUID",
+    "eventType": "produto_cadastrado",
+    "eventVersion": "1.0",
+    "timestamp": "ISO8601",
+    "source": "produtos-service",
+    "correlationId": "UUID",
+    "aggregateType": "produto",
+    "aggregateId": "UUID",
+    "userId": "UUID",
+    "payload": { ... }
+  }
+end note
+
+@enduml
